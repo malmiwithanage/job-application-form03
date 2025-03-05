@@ -1,0 +1,25 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "job-application-worker",
+	"main": "src/index.js",
+	"compatibility_date": "2025-03-03",
+	"observability": {
+		"enabled": true
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "metana",
+			"database_id": "d91f03a7-bced-4c6e-97e9-6613041326de"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "metana",
+			"bucket_name": "metana"
+		}
+	],
+	"vars": {
+		"DEBUG": "true"
+	}
+}
