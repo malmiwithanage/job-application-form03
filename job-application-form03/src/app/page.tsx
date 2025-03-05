@@ -10,23 +10,56 @@ const Apply = () => {
     const [cv, setCv] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
+    const [errors, setErrors] = useState<{ name?: string; email?: string; phoneNumber?: string; cv?: string }>({});
 
     // Drag & Drop functionality using react-dropzone
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
-        accept: { 'application/pdf': ['.pdf'] }, // Only allow PDFs
+        accept: {
+            'application/pdf': ['.pdf'],
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx']
+        }, // Allow only PDF & DOCX
         multiple: false,
         onDrop: (acceptedFiles) => {
-            setCv(acceptedFiles[0]); // Set the uploaded file
+            if (acceptedFiles.length > 0) {
+                setCv(acceptedFiles[0]);
+                setErrors((prev) => ({ ...prev, cv: undefined })); // Clear error
+            }
         },
     });
+
+    const validateForm = () => {
+        let valid = true;
+        let newErrors: typeof errors = {};
+
+        if (!name.trim()) {
+            newErrors.name = 'Name is required.';
+            valid = false;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            newErrors.email = 'Enter a valid email (e.g., emma@gmail.com).';
+            valid = false;
+        }
+
+        if (!phoneNumber.trim()) {
+            newErrors.phoneNumber = 'Phone number is required.';
+            valid = false;
+        }
+
+        if (!cv) {
+            newErrors.cv = 'Please upload your CV (PDF or DOCX).';
+            valid = false;
+        }
+
+        setErrors(newErrors);
+        return valid;
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!name || !email || !phoneNumber || !cv) {
-            setMessage('Please fill all fields and upload your CV.');
-            return;
-        }
+        if (!validateForm()) return;
 
         setIsSubmitting(true);
         setMessage(null);
@@ -35,7 +68,7 @@ const Apply = () => {
         formData.append('name', name);
         formData.append('email', email);
         formData.append('phone_number', phoneNumber);
-        formData.append('cv', cv);
+        formData.append('cv', cv as File);
 
         try {
             const response = await fetch('/api/submitApplication', {
@@ -47,16 +80,16 @@ const Apply = () => {
 
             if (response.ok) {
                 setMessage('CV uploaded and data saved successfully!');
-                // Reset the form
                 setName('');
                 setEmail('');
                 setPhoneNumber('');
                 setCv(null);
+                setErrors({});
             } else {
                 setMessage(data.error || 'Something went wrong!');
             }
         } catch (error) {
-            setMessage('There was an error processing your request');
+            setMessage('There was an error processing your request.');
         } finally {
             setIsSubmitting(false);
         }
@@ -67,56 +100,60 @@ const Apply = () => {
             <div className="w-full max-w-2xl p-6 bg-white rounded-lg shadow-lg">
                 <h1 className="text-3xl font-semibold text-center text-gray-800 mb-6">Apply for This Job</h1>
                 <form onSubmit={handleSubmit}>
-
-                  <div className="mb-4">
-                    {/* Drag & Drop File Upload */}
-                    <label className="block text-sm font-medium text-black">Resume/CV</label>
-                    <div {...getRootProps()} className="mb-4 mt-4 border-2 border-dashed border-gray-400 rounded-md p-6 text-center cursor-pointer hover:border-gray-600 transition">
-                        <input {...getInputProps()} />
-                        {isDragActive ? (
-                            <p className="text-blue-600 font-medium">Drop your resume here...</p>
-                        ) : (
-                            <p className="text-gray-600">
-                                <strong>Click or drag file to this area to upload your Resume</strong><br />
-                                <span className="text-sm">Please make sure to upload a PDF</span>
-                            </p>
-                        )}
-                        {cv && <p className="mt-2 text-sm text-green-600">Selected file: {cv.name}</p>}
-                    </div>
-                    </div>
-                  
                     <div className="mb-4">
                         <label className="block text-sm font-medium text-black">Full Name</label>
                         <input
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            required
                             className="mt-1 p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-black"
                         />
+                        {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
                     </div>
+
                     <div className="mb-4">
                         <label className="block text-sm font-medium text-black">Email</label>
                         <input
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            required
                             className="mt-1 p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-black"
                         />
+                        {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
                     </div>
+
                     <div className="mb-4">
                         <label className="block text-sm font-medium text-black">Phone Number</label>
                         <input
                             type="tel"
                             value={phoneNumber}
                             onChange={(e) => setPhoneNumber(e.target.value)}
-                            required
                             className="mt-1 p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-black"
                         />
+                        {errors.phoneNumber && <p className="text-red-500 text-sm">{errors.phoneNumber}</p>}
                     </div>
 
-                    
+                    {/* Drag & Drop File Upload */}
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-black">Resume/CV</label>
+                        <div
+                            {...getRootProps()}
+                            className="mb-4 mt-2 border-2 border-dashed border-gray-400 rounded-md p-6 text-center cursor-pointer hover:border-gray-600 transition"
+                        >
+                            <input {...getInputProps()} />
+                            {isDragActive ? (
+                                <p className="text-blue-600 font-medium">Drop your resume here...</p>
+                            ) : (
+                                <p className="text-gray-600">
+                                    <strong>Click or drag file to upload</strong>
+                                    <br />
+                                    <span className="text-sm">Accepted formats: PDF, DOCX</span>
+                                </p>
+                            )}
+                            {cv && <p className="mt-2 text-sm text-green-600">Selected file: {cv.name}</p>}
+                        </div>
+                        {errors.cv && <p className="text-red-500 text-sm">{errors.cv}</p>}
+                    </div>
 
                     <button
                         type="submit"
