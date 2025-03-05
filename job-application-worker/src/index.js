@@ -1,8 +1,5 @@
 export default {
     async fetch(request, env, ctx) {
-        // Cloudflare R2 public URL prefix
-        const PUBLIC_URL_PREFIX = 'https://pub-24990f2f31744f558e74dd8d73328de5.r2.dev/metana/';
-
         // CORS headers
         const corsHeaders = {
             'Access-Control-Allow-Origin': '*',
@@ -17,11 +14,9 @@ export default {
 
                 // Extract original filename
                 const originalFileName = file.name;
-                console.log('Original Filename:', originalFileName); // Debugging
 
                 // Sanitize the original filename
                 const sanitizedFileName = originalFileName.replace(/[^a-zA-Z0-9.]/g, '_');
-                console.log('Sanitized Filename:', sanitizedFileName); // Debugging
 
                 // Generate unique filename with timestamp
                 const fileName = `${Date.now()}_${sanitizedFileName}`;
@@ -35,11 +30,7 @@ export default {
                     }
                 });
 
-                // Construct file URL
-                const fileUrl = `${PUBLIC_URL_PREFIX}${fileName}`;
-                console.log('Generated File URL:', fileUrl); // Debugging
-
-                // Validate other required fields
+                // Validate required fields
                 const name = formData.get('name');
                 const email = formData.get('email');
                 const phoneNumber = formData.get('phone_number');
@@ -61,16 +52,14 @@ export default {
                     });
                 }
 
-                // Store applicant details with the correct file URL and original filename
+                // Store only the filename in `cv_public_url` (without original_filename column)
                 const d1Response = await env.DB.prepare(
-                    'INSERT INTO applicants (name, email, phone_number, cv_public_url, original_filename) VALUES (?, ?, ?, ?, ?)'
-                ).bind(name, email, phoneNumber, fileUrl, originalFileName).run();
-
-                console.log('Database Response:', d1Response);
+                    'INSERT INTO applicants (name, email, phone_number, cv_public_url) VALUES (?, ?, ?, ?)'
+                ).bind(name, email, phoneNumber, fileName).run();
 
                 return new Response(JSON.stringify({
                     message: 'CV uploaded and data saved successfully!',
-                    fileUrl: fileUrl
+                    fileName: fileName
                 }), { 
                     status: 200,
                     headers: {
@@ -80,7 +69,6 @@ export default {
                 });
 
             } catch (error) {
-                console.error('Error processing form submission:', error);
                 return new Response(JSON.stringify({
                     error: 'There was an error processing your request',
                     details: error.message
