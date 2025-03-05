@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
+import { useDropzone } from 'react-dropzone';
 
 const Apply = () => {
     const [name, setName] = useState('');
@@ -9,9 +10,15 @@ const Apply = () => {
     const [cv, setCv] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
-    
-    // Reference for file input to reset it
-    const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+    // Drag & Drop functionality using react-dropzone
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+        accept: { 'application/pdf': ['.pdf'] }, // Only allow PDFs
+        multiple: false,
+        onDrop: (acceptedFiles) => {
+            setCv(acceptedFiles[0]); // Set the uploaded file
+        },
+    });
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -40,17 +47,11 @@ const Apply = () => {
 
             if (response.ok) {
                 setMessage('CV uploaded and data saved successfully!');
-                
-                // Reset the form fields
+                // Reset the form
                 setName('');
                 setEmail('');
                 setPhoneNumber('');
                 setCv(null);
-                
-                // Reset file input field
-                if (fileInputRef.current) {
-                    fileInputRef.current.value = '';
-                }
             } else {
                 setMessage(data.error || 'Something went wrong!');
             }
@@ -63,11 +64,29 @@ const Apply = () => {
 
     return (
         <div className="min-h-screen bg-white flex justify-center items-center">
-            <div className="w-full max-w-lg p-6 bg-white rounded-lg shadow-lg">
-                <h1 className="text-3xl font-semibold text-center text-gray-800 mb-6">Apply for this job</h1>
+            <div className="w-full max-w-2xl p-6 bg-white rounded-lg shadow-lg">
+                <h1 className="text-3xl font-semibold text-center text-gray-800 mb-6">Apply for This Job</h1>
                 <form onSubmit={handleSubmit}>
+
+                  <div className="mb-4">
+                    {/* Drag & Drop File Upload */}
+                    <label className="block text-sm font-medium text-black">Resume/CV</label>
+                    <div {...getRootProps()} className="mb-4 mt-4 border-2 border-dashed border-gray-400 rounded-md p-6 text-center cursor-pointer hover:border-gray-600 transition">
+                        <input {...getInputProps()} />
+                        {isDragActive ? (
+                            <p className="text-blue-600 font-medium">Drop your resume here...</p>
+                        ) : (
+                            <p className="text-gray-600">
+                                <strong>Click or drag file to this area to upload your Resume</strong><br />
+                                <span className="text-sm">Please make sure to upload a PDF</span>
+                            </p>
+                        )}
+                        {cv && <p className="mt-2 text-sm text-green-600">Selected file: {cv.name}</p>}
+                    </div>
+                    </div>
+                  
                     <div className="mb-4">
-                        <label className="block text-sm font-medium text-black">Name</label>
+                        <label className="block text-sm font-medium text-black">Full Name</label>
                         <input
                             type="text"
                             value={name}
@@ -96,17 +115,9 @@ const Apply = () => {
                             className="mt-1 p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-black"
                         />
                     </div>
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium text-black">Upload CV</label>
-                        <input
-                            ref={fileInputRef} // Assign ref to file input
-                            type="file"
-                            accept=".pdf,.doc,.docx"
-                            onChange={(e) => setCv(e.target.files?.[0] || null)}
-                            required
-                            className="mt-1 p-2 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-black"
-                        />
-                    </div>
+
+                    
+
                     <button
                         type="submit"
                         disabled={isSubmitting}
@@ -116,7 +127,7 @@ const Apply = () => {
                     </button>
                 </form>
 
-                {message && <p className="text-center mt-4 text-sm text-red-500">{message}</p>}
+                {message && <p className="text-center mt-4 text-sm text-orange-400">{message}</p>}
             </div>
         </div>
     );
