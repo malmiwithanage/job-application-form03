@@ -145,9 +145,9 @@ const Apply = () => {
                                 <p className="text-blue-600 font-medium">Drop your resume here...</p>
                             ) : (
                                 <p className="text-gray-600">
-                                    <strong>Click or drag file to upload</strong>
+                                    <strong>Click or drag file to this area to upload your Resume</strong>
                                     <br />
-                                    <span className="text-sm">Accepted formats: PDF, DOCX</span>
+                                    <span className="text-sm">Please make sure to upload a PDF or DOCX</span>
                                 </p>
                             )}
                             {cv && <p className="mt-2 text-sm text-green-600">Selected file: {cv.name}</p>}
