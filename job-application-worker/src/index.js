@@ -7,6 +7,8 @@ export default {
             'Access-Control-Allow-Headers': 'Content-Type',
         };
 
+        const PUBLIC_URL_PREFIX = 'https://pub-24990f2f31744f558e74dd8d73328de5.r2.dev/metana/';
+
         if (request.method === 'POST') {
             try {
                 const formData = await request.formData();
@@ -52,14 +54,18 @@ export default {
                     });
                 }
 
-                // Store only the filename in `cv_public_url` (without original_filename column)
-                const d1Response = await env.DB.prepare(
+                // Store the full public URL in `cv_public_url`
+                const filePublicUrl = `${PUBLIC_URL_PREFIX}${fileName}`;
+
+                // Insert applicant data with full public URL
+                await env.DB.prepare(
                     'INSERT INTO applicants (name, email, phone_number, cv_public_url) VALUES (?, ?, ?, ?)'
-                ).bind(name, email, phoneNumber, fileName).run();
+                ).bind(name, email, phoneNumber, filePublicUrl).run();
 
                 return new Response(JSON.stringify({
                     message: 'CV uploaded and data saved successfully!',
-                    fileName: fileName
+                    fileName: fileName,
+                    filePublicUrl: filePublicUrl
                 }), { 
                     status: 200,
                     headers: {
